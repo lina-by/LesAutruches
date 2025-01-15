@@ -1,3 +1,6 @@
-data
+.venv
+venv
+private
+__pycache__data
 .venv
 *.ipynb
