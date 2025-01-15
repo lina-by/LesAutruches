@@ -1,4 +1,5 @@
 .venv
+data
 venv
 private
 __pycache__data
