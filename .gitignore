@@ -3,5 +3,6 @@ data
 venv
 private
 __pycache__data
+__pycache__/
 .venv
 *.ipynb
