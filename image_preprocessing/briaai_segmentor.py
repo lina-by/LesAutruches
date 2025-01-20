@@ -21,14 +21,11 @@ class ImageSegmentationPreprocessor(ImagePreprocessingFunction):
         Returns:
             PIL.Image: The segmented image with the background removed or object of interest highlighted.
         """
-        binary_mask = np.array(self.segmentation_pipeline(image, return_mask=True)) * 255
-        binary_mask = Image.fromarray(binary_mask).convert("L")
+        pillow_image = self.segmentation_pipeline(image)
+        array = np.array(pillow_image)
+        mask = array[:, :, 3]==0
 
-        # Apply the mask to the original image
-        image_array = np.array(image)  # Convert original image to a NumPy array
-        black_background = np.zeros_like(image_array)  # Create a black background
-        segmented_image_array = np.where(np.expand_dims(binary_mask, axis=-1) > 0, image_array, black_background)
-
-        # Convert back to a PIL Image
-        segmented_image = Image.fromarray(segmented_image_array)
-        return segmented_image
+        # Keep only RGB channels & Apply mask
+        array = array[:, :, :3]
+        array[mask, :] = [0, 0, 0]
+        return Image.fromarray(array)

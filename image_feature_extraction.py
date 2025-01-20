@@ -14,6 +14,60 @@ class ImagePreprocessingFunction:
 
     def __call__(self, img: Image.Image):
         return self.preprocess_function(img)
+    
+    
+    def _process_and_save(self, img_path: str, save_dir: str, save_format: str):
+        """Applies preprocessing and saves the image in the given directory."""
+        image = Image.open(img_path)
+
+        # Ensure image is in a compatible mode
+        if image.mode in ("RGBA", "P"):  # Convert RGBA/P images to RGB if necessary
+            image = image.convert("RGB")
+
+        processed_image = self.preprocess_function(image)
+
+        # Generate save path with correct format
+        image_name = os.path.splitext(os.path.basename(img_path))[0]
+        save_path = os.path.join(save_dir, f"{image_name}.{save_format}")
+
+        # Save the processed image
+        processed_image.save(save_path, format=save_format.upper())
+
+        print(f"Saved: {save_path}")
+
+
+    def run_on_paths(self, paths: list[str], save_folder_name: str, save_format="png"):
+        """
+        Runs the pipeline on a list of image paths or directories containing images.
+        Saves the processed images in 'data/preprocessed/save_folder_name'.
+        Creates subfolders named after the folder names in the paths.
+
+        Args:
+            paths (list[str]): List of image file paths or directories containing images.
+            save_folder_name (str): Folder name to save the processed images.
+            save_format (str): Format to save images (default: "png").
+        """
+        # Create the save folder if it doesn't exist
+        save_folder = os.path.join("data/preprocessed", save_folder_name)
+        os.makedirs(save_folder, exist_ok=True)
+
+        for path in paths:
+            if os.path.isdir(path):
+                folder_name = os.path.basename(os.path.normpath(path))  # Get the folder name
+                folder_save_path = os.path.join(save_folder, folder_name)
+
+                # Create subfolder if it doesn't exist
+                os.makedirs(folder_save_path, exist_ok=True)
+
+                # Process all images in the folder
+                for file_name in os.listdir(path):
+                    file_path = os.path.join(path, file_name)
+                    if ExtractFeatureMethod._is_image_file(file_path):
+                        self._process_and_save(file_path, folder_save_path, save_format)
+            elif os.path.isfile(path) and ExtractFeatureMethod._is_image_file(path):
+                self._process_and_save(path, save_folder, save_format)
+
+        print(f"Images saved in folder: {save_folder}")
 
 class VectorizationFunction:
     """
@@ -53,22 +107,51 @@ class ExtractFeatureMethod:
         feature_vectors = [self.run_on_image(img) for img in images]
         return feature_vectors
 
-    def run_on_paths(self, paths: list[str]):
+
+    def run_on_paths(self, paths: list[str], save_folder_name: str):
         """
         Runs the pipeline on a list of image paths or a directory containing images.
+        Saves the embeddings in embeddings/save_folder_name.
+        Creates subfolders named after the folder names in the paths.
+
+        Args:
+            paths (list[str]): List of image file paths or directories containing images.
+            save_folder_name (str): Folder name to save the embeddings.
         """
+        # Create the save folder if it doesn't exist
+        save_folder = os.path.join("embeddings", save_folder_name)
+        os.makedirs(save_folder, exist_ok=True)
+
         images = []
+        image_paths = []
         for path in paths:
             if os.path.isdir(path):
+                folder_name = os.path.basename(os.path.normpath(path))  # Get the folder name
+                folder_save_path = os.path.join(save_folder, folder_name)
+
+                # Create subfolder if it doesn't exist
+                os.makedirs(folder_save_path, exist_ok=True)
+
                 # Process all images in the folder
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
                     if self._is_image_file(file_path):
                         images.append(Image.open(file_path))
+                        # Save images in subfolder with folder structure
+                        image_paths.append(os.path.join(folder_save_path, file_name))
             elif os.path.isfile(path) and self._is_image_file(path):
                 images.append(Image.open(path))
-        
-        return self.run_on_images(images)
+                image_paths.append(os.path.join(save_folder, os.path.basename(path)))
+
+        # Run pipeline on images and save embeddings
+        embeddings = self.run_on_images(images)
+        for embedding, img_path in zip(embeddings, image_paths):
+            # Save each embedding as a .npy file in the designated folder
+            image_name = os.path.basename(img_path)
+            embedding_save_path = os.path.join(os.path.dirname(img_path), f"{os.path.splitext(image_name)[0]}.npy")
+            np.save(embedding_save_path, embedding)
+
+        print(f"Embeddings saved in folder: {save_folder}")
     
 
     @staticmethod
