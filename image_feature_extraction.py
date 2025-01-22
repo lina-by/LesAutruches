@@ -33,8 +33,6 @@ class ImagePreprocessingFunction:
         # Save the processed image
         processed_image.save(save_path, format=save_format.upper())
 
-        print(f"Saved: {save_path}")
-
 
     def run_on_paths(self, paths: list[str], save_folder_name: str, save_format="png"):
         """
