@@ -10,7 +10,7 @@ import itertools
 def preprocess_PCA(Db: pd.DataFrame):
     # scaling
     scaler = StandardScaler()
-    Db = scaler.fit_transform(Db)
+    Db = pd.DataFrame(scaler.fit_transform(Db).T, index=Db.columns)
     return Db
 
 
@@ -78,6 +78,7 @@ def plot_pca_distribution(
     component_x: int,
     component_y: int,
     component_z: Optional[int] = None,
+    categories=None,
 ):
     """
     Plots the distribution of data points in the PCA-reduced space.
@@ -90,6 +91,23 @@ def plot_pca_distribution(
         - component_y: Index of the second component to plot (1-based indexing).
         - component_z: Optional index of the third component to plot (for 3D plotting).
     """
+
+    if categories is not None:
+        # If weld is provided, create a scatter plot with different colors for each weld type
+        categories_types = set(categories)
+        for type in categories_types:
+            mask = categories == type
+            print(type, mask.sum())
+            ax.scatter(
+                principal_components[mask][component_x],
+                principal_components[mask][component_y],
+                alpha=0.7,
+                label=type,
+            )
+        ax.set_xlabel(f"PC{component_x}")
+        ax.set_ylabel(f"PC{component_y}")
+        ax.set_title(f"PCA Distribution (PC{component_x} vs PC{component_y})")
+        ax.legend()
 
     if component_z is None:
         # 2D Scatter plot for 2 principal components
@@ -181,7 +199,11 @@ def plot_correlation_circle(
 
 
 def plot_PCA(
-    pca: PCA, principal_components, nb_relevant_features: int, columns: list[str]
+    pca: PCA,
+    principal_components,
+    nb_relevant_features: int,
+    columns: list[str],
+    categories=None,
 ):
     """
     For each pair of principal components under the top nb_relevant_features,
@@ -210,11 +232,18 @@ def plot_PCA(
 
         # Plot the PCA distribution for the current pair of components (i, j)
         plot_pca_distribution(
-            principal_components, ax1, component_x=i, component_y=j, component_z=None
+            principal_components,
+            ax1,
+            component_x=i,
+            component_y=j,
+            component_z=None,
+            categories=categories,
         )
 
         # Plot the PCA correlation circle for the current pair of components (i, j)
-        plot_correlation_circle(pca, columns, ax2, component_x=i, component_y=j)
+        plot_correlation_circle(
+            pca, columns, ax2, component_x=i, component_y=j, threshold=0.015
+        )
 
         # Adjust the layout to avoid overlapping labels
         plt.tight_layout()
@@ -224,8 +253,22 @@ def plot_PCA(
 
 
 if __name__ == "__main__":
-    Db = pd.read_excel("latent_vectors.xlsx")
-    pca_datset = preprocess_PCA(Db)
-    pca, principal_components, nb_relevant_features = run_PCA(pca_datset)
-    plot_PCA(pca, principal_components, nb_relevant_features, pca_datset.columns)
+    Db = pd.read_csv("DAM_embeddings.csv")
+    categories = pd.read_csv("data\product_list.csv")
+
+    mask = categories["MMC"] == ""
+
+    for col in Db.columns:
+        mask = mask | (categories["MMC"] == col.split(".")[0])
+
+    categories = categories[mask]
+    pca_dataset = preprocess_PCA(Db)
+    pca, principal_components, nb_relevant_features = run_PCA(pca_dataset)
     plot_explained_variance_pca(pca, nb_relevant_features)
+    plot_PCA(
+        pca,
+        principal_components,
+        nb_relevant_features,
+        pca_dataset.columns,
+        categories["Product_BusinessUnitDesc"],
+    )
