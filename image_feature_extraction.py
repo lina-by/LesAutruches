@@ -1,6 +1,7 @@
 from PIL import Image
 import os
 import numpy as np
+from tqdm import tqdm
 from typing import Callable
 
 class ImagePreprocessingFunction:
@@ -124,6 +125,7 @@ class ExtractFeatureMethod:
         image_paths = []
         for path in paths:
             if os.path.isdir(path):
+                print(path)
                 folder_name = os.path.basename(os.path.normpath(path))  # Get the folder name
                 folder_save_path = os.path.join(save_folder, folder_name)
 
@@ -131,7 +133,7 @@ class ExtractFeatureMethod:
                 os.makedirs(folder_save_path, exist_ok=True)
 
                 # Process all images in the folder
-                for file_name in os.listdir(path):
+                for file_name in tqdm(os.listdir(path)):
                     file_path = os.path.join(path, file_name)
                     if self._is_image_file(file_path):
                         images.append(Image.open(file_path))

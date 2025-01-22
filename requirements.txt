@@ -9,3 +9,7 @@ jupyter>=1.0.0
 pybind11>=2.12
 scikit-image==0.25.0
 tqdm==4.67.1
+tensorflow==2.18.0
+pandas==2.2.3
+scikit-learn==1.6.1
+streamlit==1.41.1
