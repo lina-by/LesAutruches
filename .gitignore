@@ -1,8 +1,10 @@
 .venv
+data
 venv
 private
 data
 embeddings
 __pycache__data
-__pycache__
+__pycache__/
+.venv
 *.ipynb
