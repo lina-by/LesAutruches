@@ -26,4 +26,10 @@ class Vit(VectorizationFunction):
         inputs = self.processor(images=image, return_tensors="pt")
         with torch.no_grad():
             outputs = self.model(**inputs)
-        return outputs.last_hidden_state.squeeze(0).numpy()
+        
+        embedding = outputs.last_hidden_state.squeeze(0).numpy()
+        
+        # uncomment to have a normalized embedding of size (768,) instead of (197, 768)
+        # embedding = np.mean(embedding, axis=0)
+        # embedding = embedding / np.linalg.norm(embedding)
+        return embedding
