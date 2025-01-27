@@ -17,5 +17,6 @@ class EfficientNet(VectorizationFunction):
     def vectorize_image(self, image: Image.Image) -> np.ndarray:
         
         inputs = np.expand_dims(image, axis=0)
-        embedding = self.model.predict(inputs)
+        with torch.no_grad():
+            embedding = self.model.predict(inputs)
         return embedding.flatten()
