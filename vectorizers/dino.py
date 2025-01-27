@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 class Dino(VectorizationFunction):
-    def __init__(self, model_size: str = "base"):
+    def __init__(self, model_size: str = "small"):
         """
         Initializes the ViT-based vectorization function with the dinov2 model and processor.
         

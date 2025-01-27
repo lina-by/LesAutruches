@@ -1,6 +1,9 @@
 from PIL import Image
 import os
 import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
 from typing import Callable
 
 class ImagePreprocessingFunction:
@@ -102,11 +105,11 @@ class ExtractFeatureMethod:
         """
         Runs the pipeline on a list of PIL Images.
         """
-        feature_vectors = [self.run_on_image(img) for img in images]
+        feature_vectors = [self.run_on_image(img) for img in tqdm(images)]
         return feature_vectors
 
 
-    def run_on_paths(self, paths: list[str], save_folder_name: str):
+    def run_on_paths(self, paths: list[str], save_folder_name: str, save_unique_df: bool = False):
         """
         Runs the pipeline on a list of image paths or a directory containing images.
         Saves the embeddings in embeddings/save_folder_name.
@@ -115,6 +118,7 @@ class ExtractFeatureMethod:
         Args:
             paths (list[str]): List of image file paths or directories containing images.
             save_folder_name (str): Folder name to save the embeddings.
+            save_unique_df (bool): if True, the output is saved in a unique pandas dataframe
         """
         # Create the save folder if it doesn't exist
         save_folder = os.path.join("embeddings", save_folder_name)
@@ -143,6 +147,7 @@ class ExtractFeatureMethod:
 
         # Run pipeline on images and save embeddings
         embeddings = self.run_on_images(images)
+
         for embedding, img_path in zip(embeddings, image_paths):
             # Save each embedding as a .npy file in the designated folder
             image_name = os.path.basename(img_path)
@@ -150,6 +155,15 @@ class ExtractFeatureMethod:
             np.save(embedding_save_path, embedding)
 
         print(f"Embeddings saved in folder: {save_folder}")
+        
+        if save_unique_df:
+            output_dict = {}
+            for embedding, img_path in zip(embeddings, image_paths):
+                # Save each embedding as a .npy file in the designated folder
+                image_name = os.path.basename(img_path)
+                output_dict[image_name] = embedding
+            df_emb = pd.DataFrame.from_dict(output_dict, orient= 'columns')
+            df_emb.to_csv("DAM_embeddings", index=False)
     
 
     @staticmethod
