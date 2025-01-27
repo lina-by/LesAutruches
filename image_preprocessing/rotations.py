@@ -1,4 +1,5 @@
 from PIL import Image, ExifTags
+import numpy as np
 from image_feature_extraction import ImagePreprocessingFunction
 
 
@@ -17,10 +18,10 @@ def fix_image_orientation(image):
                     image = image.rotate(270, expand=True)
                 elif orientation == 8:
                     image = image.rotate(90, expand=True)
+                else:
+                    return image
+                return Image.fromarray(np.array(image))
 
-                # Update EXIF orientation to "1" (normal)
-                exif[orientation_tag] = 1
-                image.info["exif"] = exif
     except Exception as e:
         print(f"Erreur lors de la correction d'orientation : {e}")
     
