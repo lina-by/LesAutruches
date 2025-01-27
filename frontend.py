@@ -1,10 +1,12 @@
 import streamlit as st
+import csv
 import pandas as pd
 import os
 import numpy as np
 from PIL import Image
 from utils import find_top_k_matches
 from vectorizers.efficient_net import EfficientNet
+from vectorizers.dino import Dino
 from image_preprocessing.rotations import OrientationImages
 
 # Directories
@@ -25,6 +27,20 @@ def load_reference_embeddings():
         if file.endswith(".npy"):
             name = os.path.splitext(file)[0]
             embeddings[name] = np.load(os.path.join(EMBEDDINGS_DIR, file))
+        elif file.endswith(".csv"):
+            with open(os.path.join(EMBEDDINGS_DIR, file)) as f:
+                #print(file)
+                reader = csv.DictReader(f)
+        
+                # Initialiser les clés du dictionnaire avec des listes vides
+                for column in reader.fieldnames:
+                    
+                    embeddings[column] = []
+
+                # Remplir les listes pour chaque colonne
+                for row in reader:
+                    for column in reader.fieldnames:
+                        embeddings[column].append(float(row[column]))
     return embeddings
 
 def get_unprocessed_images():
@@ -38,7 +54,7 @@ def get_unprocessed_images():
 def load_image(image_path):
     """Fast image loading using OpenCV."""
     image = Image.open(image_path)  # Load image as NumPy array
-    image = rotation(image).resize((224, 224))
+    image = rotation(image)
     return image
 
 @st.cache_resource
@@ -50,7 +66,7 @@ def extract_features(image_path):
 
 def get_image(file_name):
     """Retrieve a reference image."""
-    for ext in [".jpg", ".png", ".jpeg"]:
+    for ext in [".jpg", ".png", ".jpeg", ""]:
         match_image_path = os.path.join(REFERENCE_DIR, file_name + ext)
         if os.path.exists(match_image_path):
             return Image.open(match_image_path).resize((150, 150))
