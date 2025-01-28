@@ -93,7 +93,7 @@ class ExtractFeatureMethod:
         self.preprocessing_function = preprocessing_function
         self.vectorization_function = vectorization_function
 
-    def run_on_image(self, img: Image.Image):
+    def __call__(self, img: Image.Image):
         """
         Runs the pipeline on a single PIL Image.
         """

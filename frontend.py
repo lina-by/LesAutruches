@@ -8,6 +8,8 @@ from utils import find_top_k_matches
 from vectorizers.efficient_net import EfficientNet
 from vectorizers.dino import Dino
 from image_preprocessing.rotations import OrientationImages
+from image_feature_extraction import ExtractFeatureMethod
+from image_preprocessing.briaai_segmentor import ImageSegmentationPreprocessor
 
 # Directories
 REFERENCE_DIR = r"data\DAM"
@@ -16,8 +18,8 @@ TEST_DIR = r"data\test_image_headmind"
 CSV_FILE = "results.csv"
 
 # Initialize model
-model = EfficientNet()
 rotation = OrientationImages()
+model = ExtractFeatureMethod(ImageSegmentationPreprocessor(True), EfficientNet())
 
 @st.cache_resource
 def load_reference_embeddings():
@@ -51,16 +53,10 @@ def get_unprocessed_images():
         processed_images.update(df["image"].tolist())
     return [f for f in os.listdir(TEST_DIR) if f not in processed_images and f.lower().endswith(('png', 'jpg', 'jpeg'))]
 
-def load_image(image_path):
-    """Fast image loading using OpenCV."""
-    image = Image.open(image_path)  # Load image as NumPy array
-    image = rotation(image)
-    return image
-
 @st.cache_resource
 def extract_features(image_path):
     """Feature extraction with OpenCV."""
-    image = load_image(image_path)
+    image = Image.open(image_path)
     embedding = model(image)
     return embedding
 
@@ -110,7 +106,7 @@ test_image_path = os.path.join(TEST_DIR, test_image_name)
 
 st.write(f"📷 **Processing Image:** `{test_image_name}`")
 test_image = Image.open(test_image_path)
-st.image(test_image, caption="Test Image", use_container_width=True)
+st.image(rotation(test_image), caption="Test Image", use_container_width=True)
 
 # Feature extraction
 test_embedding = extract_features(test_image_path)
