@@ -39,6 +39,6 @@ class CLIP(VectorizationFunction):
         embedding =  outputs.cpu().detach().numpy()
         
         # uncomment to get normalized embedding with shape (768,) instead of (1, 768)
-        # embedding = embedding.flatten()
-        # embedding = embedding / np.linalg.norm(embedding)
+        embedding = embedding.flatten()
+        embedding = embedding / np.linalg.norm(embedding)
         return embedding

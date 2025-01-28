@@ -32,8 +32,8 @@ class ResNet(VectorizationFunction):
         embedding = outputs.last_hidden_state.squeeze(0).numpy()
         
         # uncomment to have a normalized embedding of size (2048,) instead of (2048, 7, 7)
-        # embedding = np.mean(embedding, axis=(1, 2))
-        # embedding = embedding / np.linalg.norm(embedding)
+        embedding = np.mean(embedding, axis=(1, 2))
+        embedding = embedding / np.linalg.norm(embedding)
         return embedding
         
     
