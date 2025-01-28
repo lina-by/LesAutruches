@@ -1,11 +1,15 @@
 import streamlit as st
+import csv
 import pandas as pd
 import os
 import numpy as np
 from PIL import Image
 from utils import find_top_k_matches
 from vectorizers.efficient_net import EfficientNet
+from vectorizers.dino import Dino
 from image_preprocessing.rotations import OrientationImages
+from image_feature_extraction import ExtractFeatureMethod
+from image_preprocessing.briaai_segmentor import ImageSegmentationPreprocessor
 
 # Directories
 REFERENCE_DIR = r"data\DAM"
@@ -14,8 +18,8 @@ TEST_DIR = r"data\test_image_headmind"
 CSV_FILE = "results.csv"
 
 # Initialize model
-model = EfficientNet()
 rotation = OrientationImages()
+model = ExtractFeatureMethod(ImageSegmentationPreprocessor(True), EfficientNet())
 
 @st.cache_resource
 def load_reference_embeddings():
@@ -25,6 +29,20 @@ def load_reference_embeddings():
         if file.endswith(".npy"):
             name = os.path.splitext(file)[0]
             embeddings[name] = np.load(os.path.join(EMBEDDINGS_DIR, file))
+        elif file.endswith(".csv"):
+            with open(os.path.join(EMBEDDINGS_DIR, file)) as f:
+                #print(file)
+                reader = csv.DictReader(f)
+        
+                # Initialiser les clés du dictionnaire avec des listes vides
+                for column in reader.fieldnames:
+                    
+                    embeddings[column] = []
+
+                # Remplir les listes pour chaque colonne
+                for row in reader:
+                    for column in reader.fieldnames:
+                        embeddings[column].append(float(row[column]))
     return embeddings
 
 def get_unprocessed_images():
@@ -35,22 +53,16 @@ def get_unprocessed_images():
         processed_images.update(df["image"].tolist())
     return [f for f in os.listdir(TEST_DIR) if f not in processed_images and f.lower().endswith(('png', 'jpg', 'jpeg'))]
 
-def load_image(image_path):
-    """Fast image loading using OpenCV."""
-    image = Image.open(image_path)  # Load image as NumPy array
-    image = rotation(image).resize((224, 224))
-    return image
-
 @st.cache_resource
 def extract_features(image_path):
     """Feature extraction with OpenCV."""
-    image = load_image(image_path)
+    image = Image.open(image_path)
     embedding = model(image)
     return embedding
 
 def get_image(file_name):
     """Retrieve a reference image."""
-    for ext in [".jpg", ".png", ".jpeg"]:
+    for ext in [".jpg", ".png", ".jpeg", ""]:
         match_image_path = os.path.join(REFERENCE_DIR, file_name + ext)
         if os.path.exists(match_image_path):
             return Image.open(match_image_path).resize((150, 150))
@@ -94,7 +106,7 @@ test_image_path = os.path.join(TEST_DIR, test_image_name)
 
 st.write(f"📷 **Processing Image:** `{test_image_name}`")
 test_image = Image.open(test_image_path)
-st.image(test_image, caption="Test Image", use_container_width=True)
+st.image(rotation(test_image), caption="Test Image", use_container_width=True)
 
 # Feature extraction
 test_embedding = extract_features(test_image_path)
