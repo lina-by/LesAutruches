@@ -105,7 +105,7 @@ class ExtractFeatureMethod:
         """
         Runs the pipeline on a list of PIL Images.
         """
-        feature_vectors = [self.run_on_image(img) for img in tqdm(images)]
+        feature_vectors = [self(img) for img in tqdm(images)]
         return feature_vectors
 
 
@@ -164,7 +164,7 @@ class ExtractFeatureMethod:
                 image_name = os.path.basename(img_path)
                 output_dict[image_name] = embedding
             df_emb = pd.DataFrame.from_dict(output_dict, orient= 'columns')
-            df_emb.to_csv("DAM_embeddings", index=False)
+            df_emb.to_csv("Embeddings.csv", index=False)
     
 
     @staticmethod
