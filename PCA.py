@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pickle
 from typing import Optional
 import pandas as pd
 import numpy as np
@@ -241,8 +242,16 @@ def PCA_on_embeddings(
         - product_path:         The path to the reference csv file containing categories. If None, categories will not be distinguished on the PCA graphs
         - graphs3d:             Set to True if you want to plot 3d PCA graphs
     """
+    try:
+        Db = pd.read_csv(embeddings_path)
+    except:
+        try:
+            with open(embeddings_path, "rb") as f:
+                Db = pd.DataFrame(pickle.load(f))
+        except:
+            raise ValueError("The given file is neither a .csv nor a .pkl file")
 
-    Db = pd.read_csv(embeddings_path)
+    Db = Db.reindex(sorted(Db.columns), axis=1)
 
     if product_path is not None:
         categories = pd.read_csv(product_path)
